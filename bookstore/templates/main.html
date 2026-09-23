@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Книжный магазин</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body>
+    <div class="header">
+        <h1>Книжный магазин</h1>
+        <div class="user-info">
+            <span>{{ user.full_name }}</span>
+            <a href="{% url 'logout' %}" class="logout-btn">Выйти</a>
+        </div>
+    </div>
+
+    {% if role == 'Администратор' or role == 'Менеджер' %}
+    <div class="control-panel">
+        <form class="filters" method="get">
+            <input type="text" name="search" placeholder="Поиск по названию или артикулу" value="{{ search_query }}" class="search-input">
+            
+            <select name="category" class="filter-select">
+                <option value="">Все категории</option>
+                {% for cat in categories %}
+                <option value="{{ cat.category_id }}" {% if selected_category == cat.category_id|stringformat:"s" %}selected{% endif %}>
+                    {{ cat.category_name }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <select name="manufacturer" class="filter-select">
+                <option value="">Все производители</option>
+                {% for manuf in manufacturers %}
+                <option value="{{ manuf.manufacturer_id }}" {% if selected_manufacturer == manuf.manufacturer_id|stringformat:"s" %}selected{% endif %}>
+                    {{ manuf.manufacturer_name }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <select name="sort" class="filter-select" onchange="this.form.submit()">
+                <option value="product_name" {% if selected_sort == 'product_name' %}selected{% endif %}>По названию</option>
+                <option value="price" {% if selected_sort == 'price' %}selected{% endif %}>По цене</option>
+                <option value="article" {% if selected_sort == 'article' %}selected{% endif %}>По артикулу</option>
+            </select>
+
+            <button type="submit" class="filter-btn">Применить</button>
+            <a href="{% url 'main' %}" class="reset-btn">Сбросить</a>
+        </form>
+
+        {% if role == 'Администратор' %}
+        <a href="{% url 'product_create' %}" class="add-btn">+ Добавить товар</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="products-container">
+        {% for product in products %}
+        <div class="product-card">
+            <div class="product-photo-section">
+                {% if product.image_path %}
+                    <img src="{% static 'images/'|add:product.image_path %}" alt="{{ product.product_name }}" class="product-photo">
+                {% else %}
+                    <div class="product-photo-placeholder">
+                        <img src="{%static 'images/picture.png'%}" alt="Нет фото" srcset="">
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="product-info-section">
+                <div class="product-header">
+                    <span class="product-category">{{ product.category.category_name }}</span>
+                    <span class="product-separator">|</span>
+                    <span class="product-name">{{ product.product_name }}</span>
+                </div>
+
+                <div class="product-details">
+                    <p><strong>Описание товара:</strong> {{ product.description|default:"—" }}</p>
+                    <p><strong>Производитель:</strong> {{ product.manufacturer.manufacturer_name }}</p>
+                    <p><strong>Поставщик:</strong> {{ product.supplier.supplier_name }}</p>
+                    <p><strong>Цена:</strong> {{ product.price }} ₽</p>
+                    <p><strong>Единица измерения:</strong> {{ product.unit.unit }}</p>
+                    <p><strong>Количество на складе:</strong> {{ product.stock_quantity }} шт.</p>
+                </div>
+            </div>
+
+            <div class="product-discount-section">
+                {% if product.discount > 0 %}
+                    <div class="discount-badge-large">
+                        -{{ product.discount }}%
+                    </div>
+                {% else %}
+                    <div class="no-discount">
+                        Нет скидки
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if role == 'Администратор' %}
+            <div class="product-actions">
+                <a href="{% url 'product_update' product.product_id %}" class="edit-btn">✏️ Редактировать</a>
+                <a href="{% url 'product_delete' product.product_id %}" class="delete-btn">🗑️ Удалить</a>
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <p class="no-products">Товары не найдены</p>
+        {% endfor %}
+    </div>
+</body>
+</html>
