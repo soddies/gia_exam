@@ -1,6 +1,20 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import User, Product, Category, Manufacturer
+from .models import User, Product, Category, Manufacturer, Order, Role
 from django.db.models import Q
+
+def orders_list(request):
+    role = request.session.get('user_role', 'Авторизованный пользователь')
+    user_id = request.session.get('user_id')
+    user = User.objects.get(user_id=user_id) if user_id else None
+    orders = Order.objects.select_related('pickup_point').all().order_by('-order_date')
+
+    context = {
+        'orders': orders,
+        'role': role,
+        'user': user,
+    }
+
+    return render(request, 'order_list.html', context)
 
 def login_views(request):
     if request.session.get('is_authenticated'):

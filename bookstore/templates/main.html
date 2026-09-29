@@ -12,6 +12,8 @@
         <h1>Книжный магазин</h1>
         <div class="user-info">
             <span>{{ user.full_name }}</span>
+            <span> | </span>
+            <span>{{ user.role_id.role_user }}</span>
             <a href="{% url 'logout' %}" class="logout-btn">Выйти</a>
         </div>
     </div>
@@ -52,6 +54,9 @@
         {% if role == 'Администратор' %}
         <a href="{% url 'product_create' %}" class="add-btn">+ Добавить товар</a>
         {% endif %}
+        {% if role == 'Администратор' or role == 'Менеджер' %}
+        <a href="{% url 'orders_list' %}" class="orders-btn">Заказы</a>
+        {% endif %}
     </div>
     {% endif %}
 
@@ -70,17 +75,17 @@
 
             <div class="product-info-section">
                 <div class="product-header">
-                    <span class="product-category">{{ product.category.category_name }}</span>
+                    <span class="product-category">{{ product.category_id.category_name }}</span>
                     <span class="product-separator">|</span>
                     <span class="product-name">{{ product.product_name }}</span>
                 </div>
 
                 <div class="product-details">
                     <p><strong>Описание товара:</strong> {{ product.description|default:"—" }}</p>
-                    <p><strong>Производитель:</strong> {{ product.manufacturer.manufacturer_name }}</p>
-                    <p><strong>Поставщик:</strong> {{ product.supplier.supplier_name }}</p>
+                    <p><strong>Производитель:</strong> {{ product.manufacturer_id.manufacturer_name }}</p>
+                    <p><strong>Поставщик:</strong> {{ product.supplier_id.supplier_name }}</p>
                     <p><strong>Цена:</strong> {{ product.price }} ₽</p>
-                    <p><strong>Единица измерения:</strong> {{ product.unit.unit }}</p>
+                    <p><strong>Единица измерения:</strong> {{ product.unit_id.unit_name }}</p>
                     <p><strong>Количество на складе:</strong> {{ product.stock_quantity }} шт.</p>
                 </div>
             </div>
@@ -99,8 +104,8 @@
 
             {% if role == 'Администратор' %}
             <div class="product-actions">
-                <a href="{% url 'product_update' product.product_id %}" class="edit-btn">✏️ Редактировать</a>
-                <a href="{% url 'product_delete' product.product_id %}" class="delete-btn">🗑️ Удалить</a>
+                <a href="{% url 'product_update' product.product_id %}" class="edit-btn">Редактировать</a>
+                <a href="{% url 'product_delete' product.product_id %}" class="delete-btn">Удалить</a>
             </div>
             {% endif %}
         </div>

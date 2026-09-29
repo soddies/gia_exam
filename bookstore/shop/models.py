@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator
 
 class Category(models.Model):
     category_id = models.AutoField(primary_key=True)
@@ -38,7 +39,7 @@ class Unit(models.Model):
     unit_name = models.CharField(max_length=100, db_column='unit_name')
 
     class Meta:
-        db_table = 'unit'
+        db_table = 'units'
         managed = False
 
     def __str__(self):
@@ -60,7 +61,7 @@ class PickUpPoint(models.Model):
     index = models.IntegerField(db_column='index')
     city = models.CharField(max_length=100, db_column='city')
     street = models.CharField(max_length=256, db_column='street')
-    house = models.IntegerField(db_column='house')
+    house = models.CharField(max_length=20, db_column='house')
 
     class Meta:
         db_table = 'pickuppoints'
@@ -74,12 +75,12 @@ class Product(models.Model):
     article = models.CharField(max_length=100, db_column='article')
     product_name = models.CharField(max_length=256, db_column='product_name')
     unit_id = models.ForeignKey(Unit, on_delete=models.CASCADE, db_column='unit_id')
-    price = models.DecimalField(max_digits=10, decimal_places=2, db_column='price')
+    price = models.DecimalField(max_digits=10, decimal_places=2, db_column='price', validators=[MinValueValidator(0)])
     supplier_id = models.ForeignKey(Supplier, on_delete=models.CASCADE, db_column='supplier_id')
     manufacturer_id = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, db_column='manufacturer_id')
     category_id = models.ForeignKey(Category, on_delete=models.CASCADE, db_column='category_id')
     discount = models.IntegerField(db_column='discount')
-    stock_quantity = models.IntegerField(db_column='stock_quantity')
+    stock_quantity = models.IntegerField(db_column='stock_quantity', validators=[MinValueValidator(0)])
     description = models.TextField(blank=True, null=True, db_column='description')
     image_path = models.CharField(max_length=100, db_column='image_path')
 
@@ -89,6 +90,12 @@ class Product(models.Model):
 
     def __str__(self):
         return self.product_name
+
+    @property
+    def final_price(self):
+        if self.discount > 0:
+            return self.price * (100 - self.discount) / 100
+        return self.price
 
 class User(models.Model):
     user_id = models.AutoField(primary_key=True)
@@ -104,31 +111,35 @@ class User(models.Model):
     def __str__(self):
         return self.full_name
 
-# class OrderItem(models.Model):
-#     order_item_id = models.AutoField(primary_key=True)
-#     order_id = models.ForeignKey(Order, on_delete=models.CASCADE, db_column='order_id')
-#     product_id = models.ForeignKey(Product, on_delete=models.CASCADE, db_column='product_id')
+class Order(models.Model):
+    order_id = models.AutoField(primary_key=True)
+    status = models.CharField(max_length=100, db_column='status')
+    pickup_point = models.ForeignKey(PickUpPoint, on_delete=models.CASCADE, db_column='pickuppoint_id')
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE, db_column='user_id')
+    code = models.CharField(max_length=10, db_column='code')
+    order_date = models.DateField(db_column='date_order')
+    delivery_date = models.DateField(db_column='delivery_date')
 
-#     class Meta:
-#         db_table = 'order_item'
-#         managed = False
+    class Meta:
+        db_table = 'orders'
+        managed = False
+        ordering = ['-order_date']
 
-# class Order(models.Model):
-#     order_id = models.AutoField(primary_key=True)
-#     order_item_id = models.ForeignKey(OrderItem, on_delete=models.CASCADE, db_column='order_item_id')
-#     date_order = models.DateField(db_column='date_order')
-#     delivery_date = models.DateField(db_column='delivery_date')
-#     pickuppoints_id = models.ForeignKey(PickUpPoint, on_delete=models.CASCADE, db_column='pickuppoints_id')
-#     user_id = models.ForeignKey(User, on_delete=models.CASCADE, db_column='user_id')
-#     code = models.CharField(max_length=10, db_column='code')
-#     status = models.CharField(max_legnth=100, db_column='status')
+    def __str__(self):
+        return f"Заказ №{self.article}"
 
-#     class Meta:
-#         db_table = 'orders'
-#         managed = False
+class OrderItem(models.Model):
+    order_item_id = models.AutoField(primary_key=True)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, db_column='order_id', related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, db_column='product_id')
+    quantity = models.IntegerField(db_column='quantity')
 
-#     def __str__(self):
-#         return f"Заказ №{self.order_id}"
+    class Meta:
+        db_table = 'order_item'
+        managed = False
+
+    def __str__(self):
+        return f"{self.product.article} x {self.quantity}"
 
 
 
